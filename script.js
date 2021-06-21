@@ -1,3 +1,4 @@
+import axios from 'axios';
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
@@ -6,6 +7,8 @@ const requestParamsDiv = document.querySelector("[data-request-headers]");
 const template = document.querySelector("[data-key-value-template]");
 const addQueryParamButton = document.querySelector("[data-add-query-param-btn]");
 const addRequestHeaderButton = document.querySelector("[data-add-request-header-btn]");
+const form = document.querySelector("[data-form]");
+const responseHeadersDiv = document.querySelector("[data-response-headers]");
 
 queryParamsDiv.append(createNewQueryParam());
 requestParamsDiv.append(createNewRequestHeader());
@@ -36,9 +39,59 @@ function createNewRequestHeader() {
 // add new query params
 addQueryParamButton.addEventListener('click', (e) => {
     queryParamsDiv.append(createNewQueryParam());
-})
+});
 
 // add new request header
 addRequestHeaderButton.addEventListener('click', (e) => {
     requestParamsDiv.append(createNewRequestHeader());
-})
+});
+
+// handles submission of form
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    try {
+        const response = await axios({
+            url: document.querySelector("[data-url]").value,
+            method: document.querySelector("[data-method]").value,
+            params: getKeyValuePairs(queryParamsDiv),
+            headers: getKeyValuePairs(requestParamsDiv),
+        });
+        document.querySelector("[data-response-section]").classList.remove("d-none");
+        getResponseDetails(response);
+        getResponseHeaders(response.headers);
+    } catch (e) {
+        console.log("Could not process request");
+    }
+});
+
+// to get query params and headers sent in the request
+function getKeyValuePairs(container) {
+    const pairs = document.querySelectorAll("[data-key-value-pair]");
+    return [...pairs].reduce((data, pair) => {
+        const key = pair.querySelector("[data-key]").value;
+        const value = pair.querySelector("[data-value]").value;
+
+        if (key === '') return data;
+        return { ...data, [key]: value };
+    }, {});
+}
+
+// ---- response section ----- //
+
+function getResponseDetails(response){
+    document.querySelector("[data-status]").textContent = response.status;
+}
+
+function getResponseHeaders(headers){
+    responseHeadersDiv.innerHTML = "";
+
+    Object.entries(headers).forEach(([key, value]) => {
+        const keyElement = document.createElement('div');
+        keyElement.innerText = key;
+        responseHeadersDiv.append(keyElement);
+        const valueElement = document.createElement('div');
+        valueElement.innerText = value;
+        responseHeadersDiv.append(valueElement);
+    });
+}
