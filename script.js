@@ -1,6 +1,7 @@
 import axios from 'axios';
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import prettyBytes from 'pretty-bytes';
 
 const queryParamsDiv = document.querySelector("[data-query-params]");
 const requestParamsDiv = document.querySelector("[data-request-headers]");
@@ -46,26 +47,45 @@ addRequestHeaderButton.addEventListener('click', (e) => {
     requestParamsDiv.append(createNewRequestHeader());
 });
 
-// handles submission of form
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    try {
-        const response = await axios({
-            url: document.querySelector("[data-url]").value,
-            method: document.querySelector("[data-method]").value,
-            params: getKeyValuePairs(queryParamsDiv),
-            headers: getKeyValuePairs(requestParamsDiv),
-        });
-        document.querySelector("[data-response-section]").classList.remove("d-none");
-        getResponseDetails(response);
-        getResponseHeaders(response.headers);
-    } catch (e) {
-        console.log("Could not process request");
-    }
+// adding interceptors to axios to handle error and get the time required for the request
+// this intercepts the request sent by us through axios.
+//@Note : interceptors didn't work with try catch for errors
+axios.interceptors.request.use(request => {
+    request.customData = request.customData || {};
+    request.customData.startTime = new Date().getTime();
+    return request;
 });
 
-// to get query params and headers sent in the request
+function updateEndTime(response) {
+    response.customData = response.customData || {};
+    response.customData.time = new Date().getTime() - response.config.customData.startTime;
+
+    return response;
+}
+
+// this intercepts the response received by axios
+axios.interceptors.response.use(updateEndTime, e => {
+    return Promise.reject(updateEndTime(e.response));
+});
+
+// handles submission of form
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    axios({
+        url: document.querySelector("[data-url]").value,
+        method: document.querySelector("[data-method]").value,
+        params: getKeyValuePairs(queryParamsDiv),
+        headers: getKeyValuePairs(requestParamsDiv),
+    }).catch(err => err)
+        .then((response) => {
+            document.querySelector("[data-response-section]").classList.remove("d-none");
+            getResponseDetails(response);
+            getResponseHeaders(response.headers);
+        });
+});
+
+// to get query params and headers sent in the request from html
 function getKeyValuePairs(container) {
     const pairs = document.querySelectorAll("[data-key-value-pair]");
     return [...pairs].reduce((data, pair) => {
@@ -79,11 +99,15 @@ function getKeyValuePairs(container) {
 
 // ---- response section ----- //
 
-function getResponseDetails(response){
+function getResponseDetails(response) {
     document.querySelector("[data-status]").textContent = response.status;
+    document.querySelector("[data-time]").textContent = response.customData.time;
+    document.querySelector("[data-size]").textContent = prettyBytes(
+        JSON.stringify(response.data).length + JSON.stringify(response.headers).length
+    );
 }
 
-function getResponseHeaders(headers){
+function getResponseHeaders(headers) {
     responseHeadersDiv.innerHTML = "";
 
     Object.entries(headers).forEach(([key, value]) => {
