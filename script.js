@@ -1,6 +1,6 @@
 import axios from 'axios';
-import 'bootstrap'
-import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import prettyBytes from 'pretty-bytes';
 
 const queryParamsDiv = document.querySelector("[data-query-params]");
@@ -11,6 +11,30 @@ const addRequestHeaderButton = document.querySelector("[data-add-request-header-
 const form = document.querySelector("[data-form]");
 const responseHeadersDiv = document.querySelector("[data-response-headers]");
 
+// <--- axios interceptors ---> //
+// adding interceptors to axios to handle error and get the time required for the request
+// this intercepts the request sent by us through axios.
+axios.interceptors.request.use(request => {
+    request.customData = request.customData || {};
+    request.customData.startTime = new Date().getTime();
+    return request;
+});
+
+// this intercepts the response received by axios
+axios.interceptors.response.use(updateEndTime, e => {
+    return Promise.reject(updateEndTime(e.response));
+});
+
+function updateEndTime(response) {
+    response.customData = response.customData || {};
+    response.customData.time = new Date().getTime() - response.config.customData.startTime;
+
+    return response;
+}
+
+// <-- --> //
+
+// <--- request section ---> //
 queryParamsDiv.append(createNewQueryParam());
 requestParamsDiv.append(createNewRequestHeader());
 
@@ -47,27 +71,6 @@ addRequestHeaderButton.addEventListener('click', (e) => {
     requestParamsDiv.append(createNewRequestHeader());
 });
 
-// adding interceptors to axios to handle error and get the time required for the request
-// this intercepts the request sent by us through axios.
-//@Note : interceptors didn't work with try catch for errors
-axios.interceptors.request.use(request => {
-    request.customData = request.customData || {};
-    request.customData.startTime = new Date().getTime();
-    return request;
-});
-
-function updateEndTime(response) {
-    response.customData = response.customData || {};
-    response.customData.time = new Date().getTime() - response.config.customData.startTime;
-
-    return response;
-}
-
-// this intercepts the response received by axios
-axios.interceptors.response.use(updateEndTime, e => {
-    return Promise.reject(updateEndTime(e.response));
-});
-
 // handles submission of form
 form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -97,7 +100,7 @@ function getKeyValuePairs(container) {
     }, {});
 }
 
-// ---- response section ----- //
+// <--- response section -----> //
 
 function getResponseDetails(response) {
     document.querySelector("[data-status]").textContent = response.status;
