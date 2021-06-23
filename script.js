@@ -2,6 +2,7 @@ import axios from 'axios';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import prettyBytes from 'pretty-bytes';
+import editors from "./editor";
 
 const queryParamsDiv = document.querySelector("[data-query-params]");
 const requestParamsDiv = document.querySelector("[data-request-headers]");
@@ -10,6 +11,8 @@ const addQueryParamButton = document.querySelector("[data-add-query-param-btn]")
 const addRequestHeaderButton = document.querySelector("[data-add-request-header-btn]");
 const form = document.querySelector("[data-form]");
 const responseHeadersDiv = document.querySelector("[data-response-headers]");
+// we get the response and request json editors from here
+const {requestEditor, updateResponseEditor} = editors();
 
 // <--- axios interceptors ---> //
 // adding interceptors to axios to handle error and get the time required for the request
@@ -71,6 +74,15 @@ addRequestHeaderButton.addEventListener('click', (e) => {
     requestParamsDiv.append(createNewRequestHeader());
 });
 
+// get the json data from response editor
+let jsonData;
+
+try{
+    jsonData = JSON.parse(requestEditor.state.doc.toString() || null);
+}catch(e){
+    alert("Please enter valid json");
+}
+
 // handles submission of form
 form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -80,11 +92,13 @@ form.addEventListener("submit", (e) => {
         method: document.querySelector("[data-method]").value,
         params: getKeyValuePairs(queryParamsDiv),
         headers: getKeyValuePairs(requestParamsDiv),
+        jsonData
     }).catch(err => err)
         .then((response) => {
             document.querySelector("[data-response-section]").classList.remove("d-none");
             getResponseDetails(response);
             getResponseHeaders(response.headers);
+            updateResponseEditor(response.data);
         });
 });
 

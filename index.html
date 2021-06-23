@@ -50,7 +50,7 @@
                     <button type="button" data-add-request-header-btn class="mt-2 btn btn-outline-success">Add</button>
                 </div>
                 <div class="tab-pane fade show" id="json" role="tabpanel">
-                    <div class="json-request-body" class="overflow-auto" style="max-height: 200px;"></div>
+                    <div data-request-json class="json-request-body" class="overflow-auto" style="max-height: 200px;"></div>
                 </div>
             </div>
         </form>
@@ -82,7 +82,7 @@
 
             <div class="tab-content p-3 border-top-0 border">
                 <div class="tab-pane fade show active" id="body" role="tabpanel">
-                    <div class="json-response-body" class="overflow-auto" style="max-height: 200px;"></div>
+                    <div data-response-json class="json-response-body" class="overflow-auto" style="max-height: 200px;"></div>
                 </div>
                 <div class="tab-pane fade show" id="response-headers" role="tabpanel">
                     <div style="display: grid; grid-template-columns: auto 1fr; gap:0.5rem 2rem" data-response-headers></div>
