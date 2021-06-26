@@ -80,7 +80,7 @@ let jsonData;
 try{
     jsonData = JSON.parse(requestEditor.state.doc.toString() || null);
 }catch(e){
-    alert("Please enter valid json");
+    console.log("Please enter valid json");
 }
 
 // handles submission of form
